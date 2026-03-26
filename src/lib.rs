@@ -92,7 +92,7 @@ impl Initializer for OpenapiInitializerWithSetup {
 
         // Serve the `OpenAPI` spec using the enabled `OpenAPI` visualizers
         #[cfg(feature = "redoc")]
-        if let Some(config::OpenAPIType::Redoc {
+        if let Some(config::RedocConfig {
             url,
             spec_json_url,
             spec_yaml_url,
@@ -103,7 +103,7 @@ impl Initializer for OpenapiInitializerWithSetup {
         }
 
         #[cfg(feature = "scalar")]
-        if let Some(config::OpenAPIType::Scalar {
+        if let Some(config::ScalarConfig {
             url,
             spec_json_url,
             spec_yaml_url,
@@ -114,7 +114,7 @@ impl Initializer for OpenapiInitializerWithSetup {
         }
 
         #[cfg(feature = "swagger")]
-        if let Some(config::OpenAPIType::Swagger {
+        if let Some(config::SwaggerConfig {
             url,
             spec_json_url,
             spec_yaml_url,

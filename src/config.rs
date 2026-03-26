@@ -73,8 +73,7 @@ pub struct OpenAPIConfig {
     ///       url: /redoc
     /// ```
     #[cfg(feature = "redoc")]
-    #[serde(flatten)]
-    pub redoc: Option<OpenAPIType>,
+    pub redoc: Option<RedocConfig>,
     /// Scalar configuration
     /// Example:
     /// ```yaml
@@ -84,8 +83,7 @@ pub struct OpenAPIConfig {
     ///       url: /scalar
     /// ```
     #[cfg(feature = "scalar")]
-    #[serde(flatten)]
-    pub scalar: Option<OpenAPIType>,
+    pub scalar: Option<ScalarConfig>,
     /// Swagger configuration
     /// Example:
     /// ```yaml
@@ -96,70 +94,69 @@ pub struct OpenAPIConfig {
     ///       spec_json_url: /openapi.json
     /// ```
     #[cfg(feature = "swagger")]
-    #[serde(flatten)]
-    pub swagger: Option<OpenAPIType>,
+    pub swagger: Option<SwaggerConfig>,
 }
 
-/// `OpenAPI` configuration types
+/// Redoc configuration
+/// Example:
+/// ```yaml
+/// initializers:
+///   openapi:
+///     redoc:
+///       url: /redoc
+/// ```
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
-pub enum OpenAPIType {
-    /// Redoc configuration
-    /// Example:
-    /// ```yaml
-    /// initializers:
-    ///   openapi:
-    ///     redoc:
-    ///       url: /redoc
-    /// ```
-    #[cfg(feature = "redoc")]
-    #[serde(rename = "redoc")]
-    Redoc {
-        /// URL for where to host the redoc `OpenAPI` spec, example: /redoc
-        url: String,
-        /// URL for openapi.json, for example: /openapi.json
-        spec_json_url: Option<String>,
-        /// URL for openapi.yaml, for example: /openapi.yaml
-        spec_yaml_url: Option<String>,
-    },
-    /// Scalar configuration
-    /// Example:
-    /// ```yaml
-    /// initializers:
-    ///   openapi:
-    ///     scalar:
-    ///       url: /scalar
-    /// ```
-    #[cfg(feature = "scalar")]
-    #[serde(rename = "scalar")]
-    Scalar {
-        /// URL for where to host the scalar `OpenAPI` spec, example: /scalar
-        url: String,
-        /// URL for openapi.json, for example: /openapi.json
-        spec_json_url: Option<String>,
-        /// URL for openapi.yaml, for example: /openapi.yaml
-        spec_yaml_url: Option<String>,
-    },
-    /// Swagger configuration
-    /// Example:
-    /// ```yaml
-    /// initializers:
-    ///   openapi:
-    ///     swagger:
-    ///       url: /swagger
-    ///       spec_json_url: /openapi.json
-    /// ```
-    #[cfg(feature = "swagger")]
-    #[serde(rename = "swagger")]
-    Swagger {
-        /// URL for where to host the swagger `OpenAPI` spec, example:
-        /// /swagger-ui
-        url: String,
-        /// URL for openapi.json, for example: /api-docs/openapi.json
-        spec_json_url: String,
-        /// URL for openapi.yaml, for example: /openapi.yaml
-        spec_yaml_url: Option<String>,
-    },
+#[cfg(feature = "redoc")]
+pub struct RedocConfig {
+    /// URL for where to host the redoc `OpenAPI` spec, example: /redoc
+    pub url: String,
+    /// URL for openapi.json, for example: /openapi.json
+    pub spec_json_url: Option<String>,
+    /// URL for openapi.yaml, for example: /openapi.yaml
+    pub spec_yaml_url: Option<String>,
+}
+
+/// Scalar configuration
+/// Example:
+/// ```yaml
+/// initializers:
+///   openapi:
+///     scalar:
+///       url: /scalar
+/// ```
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
+#[cfg(feature = "scalar")]
+pub struct ScalarConfig {
+    /// URL for where to host the scalar `OpenAPI` spec, example: /scalar
+    pub url: String,
+    /// URL for openapi.json, for example: /openapi.json
+    pub spec_json_url: Option<String>,
+    /// URL for openapi.yaml, for example: /openapi.yaml
+    pub spec_yaml_url: Option<String>,
+}
+
+/// Swagger configuration
+/// Example:
+/// ```yaml
+/// initializers:
+///   openapi:
+///     swagger:
+///       url: /swagger
+///       spec_json_url: /openapi.json
+/// ```
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
+#[cfg(feature = "swagger")]
+pub struct SwaggerConfig {
+    /// URL for where to host the swagger `OpenAPI` spec, example:
+    /// /swagger-ui
+    pub url: String,
+    /// URL for openapi.json, for example: /api-docs/openapi.json
+    pub spec_json_url: String,
+    /// URL for openapi.yaml, for example: /openapi.yaml
+    pub spec_yaml_url: Option<String>,
 }
 
 #[cfg(test)]
@@ -242,7 +239,7 @@ mod tests {
             let swagger = config.swagger.as_ref();
             assert!(swagger.is_some(), "Swagger config should be present");
 
-            let expected = OpenAPIType::Swagger {
+            let expected = SwaggerConfig {
                 url: "/swagger".to_string(),
                 spec_json_url: "/api-docs/openapi.json".to_string(),
                 spec_yaml_url: None,
@@ -255,7 +252,7 @@ mod tests {
             let redoc = config.redoc.as_ref();
             assert!(redoc.is_some(), "Redoc config should be present");
 
-            let expected = OpenAPIType::Redoc {
+            let expected = RedocConfig {
                 url: "/redoc".to_string(),
                 spec_json_url: Some("/redoc/openapi.json".to_string()),
                 spec_yaml_url: Some("/redoc/openapi.yaml".to_string()),
@@ -268,7 +265,7 @@ mod tests {
             let scalar = config.scalar.as_ref();
             assert!(scalar.is_some(), "Scalar config should be present");
 
-            let expected = OpenAPIType::Scalar {
+            let expected = ScalarConfig {
                 url: "/scalar".to_string(),
                 spec_json_url: Some("/scalar/openapi.json".to_string()),
                 spec_yaml_url: Some("/scalar/openapi.yaml".to_string()),
