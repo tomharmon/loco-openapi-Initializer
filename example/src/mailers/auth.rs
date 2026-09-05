@@ -26,7 +26,7 @@ impl AuthMailer {
             ctx,
             &welcome,
             mailer::Args {
-                to: user.email.to_string(),
+                to: user.email.clone(),
                 locals: json!({
                   "name": user.name,
                   "verifyToken": user.email_verification_token,
@@ -50,7 +50,7 @@ impl AuthMailer {
             ctx,
             &forgot,
             mailer::Args {
-                to: user.email.to_string(),
+                to: user.email.clone(),
                 locals: json!({
                   "name": user.name,
                   "resetToken": user.reset_token,
@@ -74,10 +74,10 @@ impl AuthMailer {
             ctx,
             &magic_link,
             mailer::Args {
-                to: user.email.to_string(),
+                to: user.email.clone(),
                 locals: json!({
                   "name": user.name,
-                  "token": user.magic_link_token.clone().ok_or_else(|| Error::string(
+                  "token": user.magic_link_token.as_deref().ok_or_else(|| Error::string(
                             "the user model not contains magic link token",
                     ))?,
                   "host": ctx.config.server.full_url()

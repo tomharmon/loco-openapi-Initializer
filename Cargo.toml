@@ -20,7 +20,7 @@ scalar = ["dep:utoipa-scalar"]
 
 
 [workspace.dependencies]
-loco-rs = { version = "0.16", default-features = false }
+loco-rs = { version = "1.1", default-features = false }
 
 [dependencies]
 loco-rs = { workspace = true }

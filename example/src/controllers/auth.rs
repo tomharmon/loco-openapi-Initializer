@@ -143,7 +143,7 @@ async fn login(State(ctx): State<AppContext>, Json(params): Json<LoginParams>) -
         .generate_jwt(&jwt_secret.secret, &jwt_secret.expiration)
         .or_else(|_| unauthorized("unauthorized!"))?;
 
-    format::json(LoginResponse::new(&user, &token))
+    format::json(LoginResponse::new(&user, token))
 }
 
 #[debug_handler]
@@ -211,7 +211,7 @@ async fn magic_link_verify(
         .generate_jwt(&jwt_secret.secret, &jwt_secret.expiration)
         .or_else(|_| unauthorized("unauthorized!"))?;
 
-    format::json(LoginResponse::new(&user, &token))
+    format::json(LoginResponse::new(&user, token))
 }
 
 pub fn routes() -> Routes {

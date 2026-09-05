@@ -6,7 +6,7 @@ use serial_test::serial;
 #[serial]
 async fn can_get_albums() {
     request::<App, _, _>(|request, _ctx| async move {
-        let res = request.get("/api/albums/").await;
+        let res = request.get("/api/album/get_album").await;
         assert_eq!(res.status_code(), 200);
 
         // you can assert content like this:
