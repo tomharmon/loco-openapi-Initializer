@@ -16,14 +16,21 @@ Add the `loco-openapi` initializer, with one or multiple of the following featur
 - `swagger`
 - `redoc`
 - `scalar`
-- `full`
+- `full` (all three)
+
+No UI is enabled by default, so only the ones you pick are compiled.
+
+| `loco-openapi` | `loco-rs` |
+|----------------|-----------|
+| 0.2            | 1.3.1+    |
+| 0.1            | 0.16      |
 
 ### Example
 
 ```toml
 # Cargo.toml
 [dependencies]
-loco-openapi = { version = "0.1", features = ["full"] }
+loco-openapi = { version = "0.2", features = ["scalar"] }
 ```
 
 ## Configuration
@@ -48,6 +55,10 @@ initializers:
       spec_json_url: /api-docs/openapi.json # spec_json_url is required for swagger-ui
       # spec_yaml_url: /api-docs/openapi.yaml
 ```
+
+Configure only the UIs whose features you enabled. The app fails to start
+when `initializers.openapi` does not parse, for example a UI whose feature is
+off or a misspelled key.
 
 ## Adding the OpenAPI initializer
 

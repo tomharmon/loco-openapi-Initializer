@@ -17,14 +17,24 @@ impl<'a> From<&'a Option<BTreeMap<String, Value>>> for InitializerConfig<'a> {
     }
 }
 
-impl<'a> From<InitializerConfig<'a>> for Option<OpenAPIConfig> {
-    fn from(config: InitializerConfig<'a>) -> Self {
-        config
-            .0
-            .as_ref()
-            .and_then(|m| m.get("openapi"))
-            .cloned()
-            .and_then(|json| serde_json::from_value(json).ok())
+/// Reads `initializers.openapi`. No such key is `Ok(None)`; a key that does
+/// not parse is an error rather than a silently missing UI, including a UI
+/// whose cargo feature (`swagger`, `redoc`, `scalar`) is not enabled.
+impl<'a> TryFrom<InitializerConfig<'a>> for Option<OpenAPIConfig> {
+    type Error = Error;
+
+    fn try_from(config: InitializerConfig<'a>) -> Result<Self, Self::Error> {
+        let Some(json) = config.0.as_ref().and_then(|m| m.get("openapi")) else {
+            return Ok(None);
+        };
+        serde_json::from_value(json.clone())
+            .map(Some)
+            .map_err(|err| {
+                Error::Message(format!(
+                    "invalid `initializers.openapi` config: {err}. Each UI needs its \
+                 loco-openapi cargo feature (`swagger`, `redoc`, `scalar`)"
+                ))
+            })
     }
 }
 
@@ -62,6 +72,7 @@ pub fn get_openapi_config() -> Option<&'static OpenAPIConfig> {
 ///       # spec_yaml_url: /api-docs/openapi.yaml
 /// ```
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 pub struct OpenAPIConfig {
     /// Redoc configuration
@@ -106,6 +117,7 @@ pub struct OpenAPIConfig {
 ///       url: /redoc
 /// ```
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 #[cfg(feature = "redoc")]
 pub struct RedocConfig {
@@ -126,6 +138,7 @@ pub struct RedocConfig {
 ///       url: /scalar
 /// ```
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 #[cfg(feature = "scalar")]
 pub struct ScalarConfig {
@@ -147,6 +160,7 @@ pub struct ScalarConfig {
 ///       spec_json_url: /openapi.json
 /// ```
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 #[cfg(feature = "swagger")]
 pub struct SwaggerConfig {
@@ -223,7 +237,7 @@ mod tests {
 
         // Convert to InitializerConfig and then to OpenAPIConfig
         let initializer_config: InitializerConfig = (&initializers).into();
-        let openapi_config: Option<OpenAPIConfig> = initializer_config.into();
+        let openapi_config = Option::<OpenAPIConfig>::try_from(initializer_config).unwrap();
 
         // Verify the conversion produces the expected result
         assert!(
@@ -280,9 +294,54 @@ mod tests {
         let initializers: Option<BTreeMap<String, Value>> = None;
 
         // Convert to InitializerConfig and then to OpenAPIConfig
-        let openapi_config: Option<OpenAPIConfig> = InitializerConfig::from(&initializers).into();
+        let openapi_config =
+            Option::<OpenAPIConfig>::try_from(InitializerConfig::from(&initializers)).unwrap();
 
         // Verify the conversion handles None correctly
         assert!(openapi_config.is_none(), "OpenAPIConfig should be None");
+    }
+
+    fn parse(openapi: Value) -> Result<Option<OpenAPIConfig>, Error> {
+        let initializers = Some(BTreeMap::from([("openapi".to_string(), openapi)]));
+        Option::<OpenAPIConfig>::try_from(InitializerConfig::from(&initializers))
+    }
+
+    // Issue #37: one UI configured among several enabled features used to
+    // land in the wrong field.
+    #[test]
+    #[cfg(all(feature = "scalar", feature = "redoc"))]
+    fn test_single_ui_lands_in_its_own_field() {
+        let config = parse(serde_json::json!({ "scalar": { "url": "/scalar" } }))
+            .unwrap()
+            .unwrap();
+        assert!(config.redoc.is_none());
+        assert_eq!(
+            config.scalar,
+            Some(ScalarConfig {
+                url: "/scalar".to_string(),
+                spec_json_url: None,
+                spec_yaml_url: None,
+            })
+        );
+    }
+
+    // Issue #37: a config that does not parse used to be ignored.
+    #[test]
+    fn test_invalid_config_is_an_error() {
+        let err = parse(serde_json::json!({ "not_a_ui": { "url": "/x" } })).unwrap_err();
+        assert!(
+            err.to_string().contains("not_a_ui"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    #[cfg(not(feature = "scalar"))]
+    fn test_ui_without_its_feature_is_an_error() {
+        let err = parse(serde_json::json!({ "scalar": { "url": "/scalar" } })).unwrap_err();
+        assert!(
+            err.to_string().contains("cargo feature"),
+            "unexpected error: {err}"
+        );
     }
 }

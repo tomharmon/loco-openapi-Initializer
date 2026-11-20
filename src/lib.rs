@@ -57,7 +57,9 @@ impl Initializer for OpenapiInitializerWithSetup {
 
     async fn after_routes(&self, router: AxumRouter, ctx: &AppContext) -> Result<AxumRouter> {
         // Use the InitializerConfig wrapper
-        set_openapi_config(InitializerConfig::from(&ctx.config.initializers).into())?;
+        set_openapi_config(Option::<config::OpenAPIConfig>::try_from(
+            InitializerConfig::from(&ctx.config.initializers),
+        )?)?;
 
         let mut api_router: OpenApiRouter<AppContext> = self
             .initial_spec
